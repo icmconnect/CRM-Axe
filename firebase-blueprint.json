@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Membro": {
+      "title": "Membro",
+      "description": "Membro da casa de umbanda",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nome": { "type": "string" },
+        "nascimento": { "type": "string", "format": "date" },
+        "telefone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "contribuicao_sugerida": { "type": "number" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo"] }
+      },
+      "required": ["id", "nome", "status"]
+    },
+    "Financeiro": {
+      "title": "Financeiro",
+      "description": "Lançamento financeiro",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tipo": { "type": "string", "enum": ["Entrada", "Saída", "Serviço"] },
+        "categoria": { "type": "string" },
+        "valor": { "type": "number" },
+        "data": { "type": "string", "format": "date-time" },
+        "id_membro": { "type": "string" },
+        "id_banco": { "type": "string" },
+        "descricao": { "type": "string" },
+        "horas_trabalhadas": { "type": "number" }
+      },
+      "required": ["id", "tipo", "valor", "data"]
+    },
+    "Configuracoes": {
+      "title": "Configuracoes",
+      "description": "Configurações de bancos",
+      "type": "object",
+      "properties": {
+        "id_banco": { "type": "string" },
+        "nome_banco": { "type": "string" },
+        "saldo_atual": { "type": "number" }
+      },
+      "required": ["id_banco", "nome_banco", "saldo_atual"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Log de auditoria",
+      "type": "object",
+      "properties": {
+        "data": { "type": "string", "format": "date-time" },
+        "usuario_email": { "type": "string", "format": "email" },
+        "acao": { "type": "string" },
+        "documento_id": { "type": "string" }
+      },
+      "required": ["data", "usuario_email", "acao", "documento_id"]
+    }
+  },
+  "firestore": {
+    "/membros/{membro}": { "schema": "Membro", "description": "Coleção de membros" },
+    "/financeiro/{doc}": { "schema": "Financeiro", "description": "Coleção financeira" },
+    "/configuracoes/{config}": { "schema": "Configuracoes", "description": "Coleção de configurações" },
+    "/audit_logs/{log}": { "schema": "AuditLog", "description": "Coleção de logs de auditoria" }
+  }
+}

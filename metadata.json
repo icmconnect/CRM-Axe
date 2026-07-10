@@ -1,0 +1,6 @@
+{
+  "name": "Portal dos Sacerdotes - Gestão Profissional para Casas de Axe",
+  "description": "ERP para gestão financeira, membros e auditoria de Casas de Umbanda e Candomblé.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

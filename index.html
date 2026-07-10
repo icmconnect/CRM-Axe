@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Portal dos Sacerdotes - Gestão Profissional para Casas de Axe</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#D97706" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Portal Sacerdotes" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Unregister service workers if they are causing issues with 404 caching
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+
+      // Auto-reload watchdog
+      // If the app fails to load or the server is down, try to reload automatically
+      window.addEventListener('error', function(e) {
+        if (e.target && (e.target.src || e.target.href)) {
+          console.log('Resource failed to load, checking server...');
+          setTimeout(() => window.location.reload(), 5000);
+        }
+      }, true);
+
+      // Check for connection drops
+      window.addEventListener('offline', () => {
+        console.log('Connection lost. Waiting for online status to reload...');
+      });
+
+      window.addEventListener('online', () => {
+        console.log('Connection restored. Reloading...');
+        window.location.reload();
+      });
+
+      // Keep-alive heartbeat to prevent container sleep
+      setInterval(() => {
+        fetch('/api/heartbeat')
+          .then(r => r.json())
+          .then(d => console.log('Heartbeat:', d.status))
+          .catch(e => console.warn('Heartbeat failed, container might be sleeping.'));
+      }, 60 * 1000); // Every 1 minute
+
+      // Auto-reload if returning to tab after long inactivity
+      let lastActive = Date.now();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          const now = Date.now();
+          const inactiveTime = now - lastActive;
+          if (inactiveTime > 5 * 60 * 1000) { // 5 minutes
+            console.log('Returning after inactivity, refreshing app...');
+            window.location.reload();
+          }
+          lastActive = now;
+        }
+      });
+      
+      // Update last active on any interaction
+      ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+        document.addEventListener(event, () => {
+          lastActive = Date.now();
+        }, { passive: true });
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
