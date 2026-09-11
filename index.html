@@ -3,18 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Portal dos Sacerdotes - Gestão Profissional para Casas de Axe</title>
+    <title>Ase Connect - Gestão Profissional para Casas de Axé</title>
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/assets/images/favicon.png" />
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#D97706" />
+    <meta name="theme-color" content="#1A1A1A" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Portal Sacerdotes" />
-    <link rel="apple-touch-icon" href="/logo.svg" />
+    <meta name="apple-mobile-web-app-title" content="Ase Connect" />
+    <link rel="apple-touch-icon" href="/assets/images/favicon.png" />
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="min-h-screen bg-slate-50 dark:bg-[#1A1A1A] text-slate-800 dark:text-slate-100 antialiased">
+    <div id="root" class="min-h-screen w-full flex flex-col bg-slate-50 dark:bg-[#1A1A1A]"></div>
     <script>
       // Unregister service workers if they are causing issues with 404 caching
       if ('serviceWorker' in navigator) {
@@ -25,53 +27,13 @@
         });
       }
 
-      // Auto-reload watchdog
-      // If the app fails to load or the server is down, try to reload automatically
-      window.addEventListener('error', function(e) {
-        if (e.target && (e.target.src || e.target.href)) {
-          console.log('Resource failed to load, checking server...');
-          setTimeout(() => window.location.reload(), 5000);
-        }
-      }, true);
-
-      // Check for connection drops
-      window.addEventListener('offline', () => {
-        console.log('Connection lost. Waiting for online status to reload...');
-      });
-
-      window.addEventListener('online', () => {
-        console.log('Connection restored. Reloading...');
-        window.location.reload();
-      });
-
       // Keep-alive heartbeat to prevent container sleep
       setInterval(() => {
         fetch('/api/heartbeat')
           .then(r => r.json())
           .then(d => console.log('Heartbeat:', d.status))
-          .catch(e => console.warn('Heartbeat failed, container might be sleeping.'));
+          .catch(e => console.warn('Heartbeat check silent fallback'));
       }, 60 * 1000); // Every 1 minute
-
-      // Auto-reload if returning to tab after long inactivity
-      let lastActive = Date.now();
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          const now = Date.now();
-          const inactiveTime = now - lastActive;
-          if (inactiveTime > 5 * 60 * 1000) { // 5 minutes
-            console.log('Returning after inactivity, refreshing app...');
-            window.location.reload();
-          }
-          lastActive = now;
-        }
-      });
-      
-      // Update last active on any interaction
-      ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
-        document.addEventListener(event, () => {
-          lastActive = Date.now();
-        }, { passive: true });
-      });
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

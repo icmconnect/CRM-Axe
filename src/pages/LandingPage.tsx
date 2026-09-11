@@ -57,16 +57,10 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-slate-800 font-sans selection:bg-[#FDE68A] scroll-smooth">
       {/* HEADER / NAVIGATION BAR */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 filter drop-shadow-md">
-              <Logo />
-            </div>
-            <div>
-              <span className="text-[#D97706] text-[9px] uppercase tracking-widest font-extrabold block">Portal Oficial</span>
-              <h1 className="text-sm font-bold font-serif text-slate-900 tracking-tight">Portal dos Sacerdotes</h1>
-            </div>
+            <Logo variant="horizontal" className="h-24 sm:h-28 w-auto object-contain" />
           </div>
 
           {/* Desktop Nav */}
@@ -193,7 +187,7 @@ export default function LandingPage() {
             <a
               href="https://wa.me/5521999999999" 
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="w-full sm:w-auto bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 hover:text-emerald-600 font-bold px-8 py-5 rounded-2xl transition-all duration-200 text-xs tracking-widest uppercase flex items-center justify-center gap-2 shadow-sm"
             >
               <Phone size={16} className="text-emerald-500" />
@@ -512,29 +506,23 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-slate-950 text-slate-500 py-12 border-t border-slate-900 text-xs">
+      <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 opacity-70">
-              <Logo />
-            </div>
-            <div>
-              <span className="font-serif font-bold text-slate-350 text-slate-300">Portal dos Sacerdotes</span>
-              <p className="text-[10px] mt-0.5 text-slate-600">Gestão de Terreiros e Casas de Axé</p>
-            </div>
+            <Logo variant="inverted" className="h-24 sm:h-28 md:h-32 w-auto object-contain drop-shadow" />
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-slate-400 font-bold">
             <a href="#funcionalidades" className="hover:text-[#D97706] transition-colors">Funcionalidades</a>
             <a href="#planos" className="hover:text-[#D97706] transition-colors">Planos</a>
-            <a href="https://wa.me/5514981570008?text=Ol%C3%A1%21%2520Gostaria%2520de%2520tirar%2520uma%2520d%25C3%25BAvida%2520sobre%2520o%2520Portal%2520dos%2520Sacerdotes." target="_blank" rel="noreferrer" className="hover:text-emerald-500 transition-colors">Contato</a>
+            <a href="https://wa.me/5514981570008?text=Ol%C3%A1%21%2520Gostaria%2520de%2520tirar%2520uma%2520d%25C3%25BAvida%2520sobre%2520o%2520Portal%2520dos%2520Sacerdotes." target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500 transition-colors">Contato</a>
             <span className="text-slate-700">|</span>
             <span className="text-[10px] leading-relaxed text-slate-600">WhatsApp Suporte: (14) 98157-0008</span>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-8 border-t border-slate-900/60 text-center text-[10px] text-slate-700 font-medium">
-          <p>© 2026 Portal dos Sacerdotes. Desenvolvido para a preservação estruturada de nossas comunidades tradicionais de matriz africana. Axé!</p>
+          <p>© 2026 Ase Connect. Desenvolvido para a preservação estruturada de nossas comunidades tradicionais de matriz africana. Axé!</p>
         </div>
       </footer>
     </div>

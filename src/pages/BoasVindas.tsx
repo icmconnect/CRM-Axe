@@ -67,7 +67,7 @@ export default function BoasVindas() {
             Axé, {casa?.admin_nome || 'Sacerdote'}!
           </h1>
           <p className="text-slate-500 text-sm sm:text-lg mt-3 max-w-xl mx-auto leading-relaxed">
-            Seu terreiro já possui uma infraestrutura digital segura no <strong className="text-slate-800">Portal dos Sacerdotes</strong>.
+            Seu terreiro já possui uma infraestrutura digital segura no <strong className="text-slate-800">Ase Connect</strong>.
           </p>
 
           {casa && (

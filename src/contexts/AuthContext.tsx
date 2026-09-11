@@ -25,6 +25,8 @@ interface AuthContextType {
   userRole: UserRole | null;
   casa: CasaAxe | null;
   loading: boolean;
+  assumedCasaId: string | null;
+  assumeCasa: (id: string | null) => void;
   temPermissao: (nivelMinimo: Role) => boolean;
   podeVerCasa: (id_casa: string) => boolean;
   podeEditar: () => boolean;
@@ -40,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [casa, setCasa] = useState<CasaAxe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [assumedCasaId, setAssumedCasaId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -270,6 +273,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const assumeCasa = (id: string | null) => {
+    if (userRole?.role === Role.MASTER) {
+      setAssumedCasaId(id);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -277,6 +286,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userRole,
         casa,
         loading,
+        assumedCasaId,
+        assumeCasa,
         temPermissao,
         podeVerCasa,
         podeEditar,

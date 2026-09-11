@@ -41,7 +41,7 @@ export default function ContaSuspensa() {
           </h2>
           <div className="h-1 w-12 bg-red-500 rounded-full mx-auto mt-3" />
           <p className="text-xs text-slate-500 mt-4 leading-relaxed font-medium">
-            Identificamos uma pendência em sua assinatura do <strong>Portal dos Sacerdotes</strong>. 
+            Identificamos uma pendência em sua assinatura do <strong>Ase Connect</strong>. 
             Para garantir a continuidade dos dados do seu Terreiro e liberar as funcionalidades, por favor, realize a regularização com nosso suporte financeiro.
           </p>
         </div>

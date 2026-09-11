@@ -8,14 +8,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { Financeiro as IFinanceiro } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Upload, FileText, ArrowUpCircle, ArrowDownCircle, Search, Clock, Edit2, ChevronDown, Share2, FileBarChart } from 'lucide-react';
+import { Plus, Upload, FileText, ArrowUpCircle, ArrowDownCircle, Search, Clock, Edit2, ChevronDown, Share2, FileBarChart, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { extrairDadosComprovante } from '../services/geminiService';
 import { validarLancamentoFinanceiro, formatarErros } from '../utils/validators';
 
 export default function Financeiro() {
   const { financeiro: transacoes, membros, loading } = useData();
-  const { userRole } = useAuth();
+  const { userRole, assumedCasaId } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [mesSelecionado, setMesSelecionado] = useState<Date>(new Date());
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,30 +37,49 @@ export default function Financeiro() {
     comprovanteUrl: ''
   });
 
-  const filteredTransacoes = useMemo(() => {
-    return transacoes.filter(t => 
-      t.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.categoria.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [transacoes, searchTerm]);
+  const currentMonth = mesSelecionado.getMonth();
+  const currentYear = mesSelecionado.getFullYear();
 
-  // Report Calculations
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // Transações filtradas pelo mês selecionado
+  const transacoesDoMes = useMemo(() => {
+    return transacoes.filter(f => {
+      if (!f.data) return false;
+      const d = new Date(f.data);
+      const dateStr = typeof f.data === 'string' ? f.data.split('T')[0] : '';
+      if (dateStr && dateStr.includes('-')) {
+        const [year, month] = dateStr.split('-').map(Number);
+        if (year === currentYear && (month - 1) === currentMonth) return true;
+      }
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+    });
+  }, [transacoes, currentMonth, currentYear]);
+
+  const filteredTransacoes = useMemo(() => {
+    return transacoesDoMes.filter(t => 
+      (t.descricao || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.categoria || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [transacoesDoMes, searchTerm]);
+
+  // Report & Totals Calculations
+  const totalReceitas = useMemo(() => transacoesDoMes.filter(t => t.tipo === 'Entrada').reduce((acc, t) => acc + (Number(t.valor) || 0), 0), [transacoesDoMes]);
+  const totalDespesas = useMemo(() => transacoesDoMes.filter(t => t.tipo === 'Saída').reduce((acc, t) => acc + (Number(t.valor) || 0), 0), [transacoesDoMes]);
+  const saldo = totalReceitas - totalDespesas;
+
+  const totalGeralAcumulado = useMemo(() => {
+    const ent = transacoes.filter(t => t.tipo === 'Entrada').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+    const sai = transacoes.filter(t => t.tipo === 'Saída').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+    return ent - sai;
+  }, [transacoes]);
 
   const inadimplentes = useMemo(() => membros.filter(m => {
-    return !transacoes.some(f => 
+    return m.status === 'Ativo' && !transacoesDoMes.some(f => 
       f.id_membro === m.id && 
-      f.tipo === 'Entrada' &&
-      new Date(f.data).getMonth() === currentMonth &&
-      new Date(f.data).getFullYear() === currentYear
+      f.tipo === 'Entrada'
     );
-  }), [membros, transacoes, currentMonth, currentYear]);
+  }), [membros, transacoesDoMes]);
 
-  const aReceber = useMemo(() => inadimplentes.reduce((acc, m) => acc + (m.contribuicao_sugerida || 0), 0), [inadimplentes]);
-  const totalReceitas = useMemo(() => transacoes.filter(t => t.tipo === 'Entrada').reduce((acc, t) => acc + t.valor, 0), [transacoes]);
-  const totalDespesas = useMemo(() => transacoes.filter(t => t.tipo === 'Saída').reduce((acc, t) => acc + t.valor, 0), [transacoes]);
-  const saldo = totalReceitas - totalDespesas;
+  const aReceber = useMemo(() => inadimplentes.reduce((acc, m) => acc + (Number(m.contribuicao_sugerida) || 0), 0), [inadimplentes]);
 
   const createPDFBlob = async () => {
     const { default: jsPDF } = await import('jspdf');
@@ -67,25 +87,27 @@ export default function Financeiro() {
     const doc = new jsPDF();
     
     doc.setFontSize(18);
-    doc.text('Relatório Financeiro Consolidado', 14, 22);
+    const mesNome = format(mesSelecionado, 'MMMM yyyy', { locale: ptBR });
+    doc.text(`Relatório Financeiro - ${mesNome.toUpperCase()}`, 14, 22);
     
     doc.setFontSize(12);
     doc.text(`Data de Geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
     
-    doc.text(`Total Receitas: R$ ${totalReceitas.toFixed(2)}`, 14, 40);
-    doc.text(`Total Despesas: R$ ${totalDespesas.toFixed(2)}`, 14, 48);
-    doc.text(`Saldo Atual: R$ ${saldo.toFixed(2)}`, 14, 56);
-    doc.text(`A Receber (Inadimplentes): R$ ${aReceber.toFixed(2)}`, 14, 64);
+    doc.text(`Total Receitas (${mesNome}): R$ ${(Number(totalReceitas) || 0).toFixed(2)}`, 14, 40);
+    doc.text(`Total Despesas (${mesNome}): R$ ${(Number(totalDespesas) || 0).toFixed(2)}`, 14, 48);
+    doc.text(`Saldo do Mês: R$ ${(Number(saldo) || 0).toFixed(2)}`, 14, 56);
+    doc.text(`Saldo Geral Acumulado: R$ ${(Number(totalGeralAcumulado) || 0).toFixed(2)}`, 14, 64);
+    doc.text(`A Receber (Inadimplentes): R$ ${(Number(aReceber) || 0).toFixed(2)}`, 14, 72);
 
     autoTable(doc, {
-      startY: 74,
+      startY: 80,
       head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']],
-      body: transacoes.map(t => [
+      body: transacoesDoMes.map(t => [
         new Date(t.data).toLocaleDateString('pt-BR'),
-        t.descricao,
-        t.categoria,
-        t.tipo,
-        `R$ ${t.valor.toFixed(2)}`
+        t.descricao || '',
+        t.categoria || '',
+        t.tipo || '',
+        `R$ ${(Number(t.valor) || 0).toFixed(2)}`
       ]),
     });
 
@@ -162,7 +184,7 @@ export default function Financeiro() {
         horas_trabalhadas: Number(currentFormData.horas_trabalhadas) || 0,
         data: finalDate,
         modificado_por_email: auth.currentUser?.email || 'Desconhecido',
-        id_casa: userRole?.id_casa || null,
+        id_casa: assumedCasaId || userRole?.id_casa || null,
         ambiente: userRole?.ambiente || 'producao'
       };
 
@@ -327,13 +349,75 @@ export default function Financeiro() {
         </div>
       </div>
 
-      {/* Filtro */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
-        <div className="relative">
+      {/* Navegação por Mês & Resumo do Mês */}
+      <div className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-4 transition-colors">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700/60 pb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="text-[#D97706] dark:text-[#FBBF24]" size={20} />
+            <span className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
+              Lançamentos do Mês
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 bg-[#FFF9E6] dark:bg-slate-900 border border-[#FDE68A] dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
+            <button 
+              type="button"
+              onClick={() => {
+                const prev = new Date(mesSelecionado);
+                prev.setMonth(prev.getMonth() - 1);
+                setMesSelecionado(prev);
+              }} 
+              className="p-1 text-[#D97706] dark:text-[#FBBF24] hover:bg-[#FDE68A] dark:hover:bg-slate-800 rounded-full transition-colors"
+              title="Mês Anterior"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            
+            <span className="text-xs sm:text-sm font-bold tracking-wider text-[#D97706] dark:text-[#FBBF24] px-3 uppercase min-w-[130px] text-center">
+              {format(mesSelecionado, 'MMMM yyyy', { locale: ptBR })}
+            </span>
+            
+            <button 
+              type="button"
+              onClick={() => {
+                const next = new Date(mesSelecionado);
+                next.setMonth(next.getMonth() + 1);
+                setMesSelecionado(next);
+              }} 
+              className="p-1 text-[#D97706] dark:text-[#FBBF24] hover:bg-[#FDE68A] dark:hover:bg-slate-800 rounded-full transition-colors"
+              title="Próximo Mês"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Resumo Financeiro do Mês Selecionado */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+            <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">Entradas (Mês)</p>
+            <p className="text-sm sm:text-base font-black text-emerald-700 dark:text-emerald-300">R$ {totalReceitas.toFixed(2)}</p>
+          </div>
+          <div className="bg-red-50/60 dark:bg-red-950/30 p-3 rounded-xl border border-red-100 dark:border-red-900/30">
+            <p className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase">Saídas (Mês)</p>
+            <p className="text-sm sm:text-base font-black text-red-700 dark:text-red-300">R$ {totalDespesas.toFixed(2)}</p>
+          </div>
+          <div className="bg-amber-50/60 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-100 dark:border-amber-900/30">
+            <p className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase">Saldo do Mês</p>
+            <p className={`text-sm sm:text-base font-black ${saldo >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>R$ {saldo.toFixed(2)}</p>
+          </div>
+          <div className="bg-slate-100 dark:bg-slate-700/60 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">Caixa Acumulado</p>
+            <p className={`text-sm sm:text-base font-black ${totalGeralAcumulado >= 0 ? 'text-slate-800 dark:text-slate-100' : 'text-red-600 dark:text-red-400'}`}>R$ {totalGeralAcumulado.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Busca */}
+        <div className="relative pt-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500" size={20} />
           <input 
             type="text" 
-            placeholder="Buscar lançamentos..." 
+            placeholder={`Buscar lançamentos em ${format(mesSelecionado, 'MMMM yyyy', { locale: ptBR })}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-[#D97706] dark:focus:ring-[#FBBF24] outline-none bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 transition-colors"
@@ -389,7 +473,7 @@ export default function Financeiro() {
                     {t.tipo === 'Entrada' ? '+' : '-'} R$ {t.valor.toFixed(2)}
                   </td>
                   <td className="px-2 sm:px-6 py-2 whitespace-nowrap text-right">
-                    <button onClick={() => handleEdit(t)} className="text-slate-300 dark:text-slate-500 hover:text-[#D97706] dark:hover:text-[#FBBF24] p-1 transition-colors">
+                    <button onClick={() => handleEdit(t)} aria-label="Editar Lançamento" className="text-slate-300 dark:text-slate-500 hover:text-[#D97706] dark:hover:text-[#FBBF24] p-1 transition-colors">
                       <Edit2 size={14} />
                     </button>
                   </td>

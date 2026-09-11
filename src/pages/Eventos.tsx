@@ -14,7 +14,7 @@ import { gerarPDF } from '../utils/pdfGenerator';
 
 export default function Eventos() {
   const { eventos, financeiro, itens, membros, loading } = useData();
-  const { userRole } = useAuth();
+  const { userRole, assumedCasaId } = useAuth();
   
   const [selectedEventoId, setSelectedEventoId] = useState<string | null>(null);
   
@@ -48,7 +48,7 @@ export default function Eventos() {
       await addDoc('eventos', {
         ...eventoForm,
         status: 'Aberto',
-        id_casa: userRole?.id_casa || null,
+        id_casa: assumedCasaId || userRole?.id_casa || null,
         ambiente: userRole?.ambiente || 'producao',
         criado_por_email: auth.currentUser?.email
       });
@@ -71,7 +71,7 @@ export default function Eventos() {
         ...itemForm,
         id_evento: selectedEventoId,
         concluido: !!itemForm.id_membro_doador,
-        id_casa: userRole?.id_casa || null,
+        id_casa: assumedCasaId || userRole?.id_casa || null,
         ambiente: userRole?.ambiente || 'producao'
       });
       setIsNewItemModalOpen(false);
@@ -108,7 +108,7 @@ export default function Eventos() {
         id_evento: selectedEventoId, // Vinculando ao evento
         modificado_por_email: auth.currentUser?.email || 'Desconhecido',
         data: new Date(finForm.data).toISOString(),
-        id_casa: userRole?.id_casa || null,
+        id_casa: assumedCasaId || userRole?.id_casa || null,
         ambiente: userRole?.ambiente || 'producao'
       });
       setIsNewFinModalOpen(false);

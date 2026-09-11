@@ -186,13 +186,7 @@ export default function CadastroCasa() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-16 h-16 filter drop-shadow-lg">
-              <Logo />
-            </div>
-            <div>
-              <span className="text-[#D97706] text-[10px] uppercase tracking-widest font-extrabold block">ERP Premium</span>
-              <h2 className="text-xl font-bold font-serif tracking-tight">Portal dos Sacerdotes</h2>
-            </div>
+            <Logo variant="horizontal" className="h-10 sm:h-12 w-auto object-contain" />
           </div>
 
           <div className="space-y-8 mt-12 max-w-md">
@@ -206,7 +200,7 @@ export default function CadastroCasa() {
             </div>
 
             <p className="text-slate-400 text-sm leading-relaxed">
-              O Portal dos Sacerdotes centraliza tudo que seu terreiro precisa: contabilidade com auditoria, controle de membros, obrigações espirituais e relatórios instantâneos em PDF.
+              O Ase Connect centraliza tudo que seu terreiro precisa: contabilidade com auditoria, controle de membros, obrigações espirituais e relatórios instantâneos em PDF.
             </p>
 
             <div className="space-y-4">
@@ -328,7 +322,7 @@ export default function CadastroCasa() {
                 required
               />
               <label htmlFor="termos-checkbox" className="text-slate-500 text-[11px] leading-snug">
-                Eu aceito os <strong>Termos de Uso</strong> e as <strong> Políticas de Privacidade</strong> do Portal dos Sacerdotes.
+                Eu aceito os <strong>Termos de Uso</strong> e as <strong> Políticas de Privacidade</strong> do Ase Connect.
               </label>
             </div>
 

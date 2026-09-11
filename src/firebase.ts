@@ -17,6 +17,17 @@ const db = initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED
 }, (firebaseConfig as any).firestoreDatabaseId || '(default)');
 
+// Habilita persistência offline do Firestore com tratamento para múltiplas abas
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    console.warn('Persistência desativada: múltiplas abas abertas simultaneamente.');
+  } else if (err.code === 'unimplemented') {
+    console.warn('Navegador atual não suporta persistência offline do Firestore.');
+  } else {
+    console.warn('Erro ao ativar persistência do Firestore:', err);
+  }
+});
+
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export { db };

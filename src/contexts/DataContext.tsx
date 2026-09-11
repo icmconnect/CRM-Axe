@@ -67,7 +67,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, userRole, assumedCasaId, loading: authLoading } = useAuth();
   
   const [rawMembros, setRawMembros] = useState<Membro[]>([]);
   const [rawFinanceiro, setRawFinanceiro] = useState<Financeiro[]>([]);
@@ -91,8 +91,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const processSnapshot = (snapshot: any, setter: any, type: string) => {
       const dadosBrutos = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        id: doc.id
       }));
       
       // FILTRO ZERO TOLERÂNCIA
@@ -102,8 +102,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // Sem userRole carregado, não mostrar nada
         dadosFiltrados = [];
       } else if (userRole.role === 'MASTER') {
-        // MASTER vê tudo
-        dadosFiltrados = dadosBrutos;
+        if (assumedCasaId) {
+          dadosFiltrados = dadosBrutos.filter((doc: any) => doc.id_casa === assumedCasaId);
+        } else {
+          // MASTER vê tudo
+          dadosFiltrados = dadosBrutos;
+        }
       } else if (!userRole.id_casa) {
         // Se não for MASTER e não tiver casa, não vê nada
         dadosFiltrados = [];
@@ -159,12 +163,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const qLogs = query(collection(db, 'audit_logs'), orderBy('data', 'desc'));
     const unsubLogs = onSnapshot(qLogs, (snapshot) => {
       // Regra especial para logs: testador não vê nada
-      const dadosBrutos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const dadosBrutos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       let dadosFiltrados;
       if (!userRole || userRole.role === 'TESTADOR') {
         dadosFiltrados = [];
       } else if (userRole.role === 'MASTER') {
-        dadosFiltrados = dadosBrutos;
+        if (assumedCasaId) {
+          dadosFiltrados = dadosBrutos.filter((doc: any) => doc.id_casa === assumedCasaId);
+        } else {
+          dadosFiltrados = dadosBrutos;
+        }
       } else {
         dadosFiltrados = dadosBrutos.filter((doc: any) => {
           if (!doc.id_casa) return false;
@@ -185,7 +193,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       unsubItens();
       unsubLogs();
     };
-  }, [user, userRole, authLoading]);
+  }, [user, userRole, assumedCasaId, authLoading]);
 
   const membros = rawMembros;
   const financeiro = rawFinanceiro;

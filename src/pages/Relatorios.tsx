@@ -39,7 +39,7 @@ export default function Relatorios() {
     try {
       const doc = new jsPDF();
       doc.setFontSize(18);
-      doc.text('Relatório Sintético - Portal dos Sacerdotes', 14, 22);
+      doc.text('Relatório Sintético - Ase Connect', 14, 22);
       
       const entradas = financeiroFiltrado.filter(f => f.tipo === 'Entrada').reduce((acc, curr) => acc + curr.valor, 0);
       const saidas = financeiroFiltrado.filter(f => f.tipo === 'Saída').reduce((acc, curr) => acc + curr.valor, 0);
@@ -72,7 +72,7 @@ export default function Relatorios() {
         
         const shareData = {
           title: 'Relatório Sintético',
-          text: `*Relatório Sintético - Portal dos Sacerdotes*\nData: ${format(new Date(), 'dd/MM/yyyy HH:mm')}\n\nEntradas: R$ ${entradas.toFixed(2)}\nSaídas: R$ ${saidas.toFixed(2)}\nSaldo: R$ ${saldo.toFixed(2)}`,
+          text: `*Relatório Sintético - Ase Connect*\nData: ${format(new Date(), 'dd/MM/yyyy HH:mm')}\n\nEntradas: R$ ${entradas.toFixed(2)}\nSaídas: R$ ${saidas.toFixed(2)}\nSaldo: R$ ${saldo.toFixed(2)}`,
         };
 
         if (navigator.share) {
@@ -100,7 +100,7 @@ export default function Relatorios() {
     try {
       const doc = new jsPDF();
       doc.setFontSize(18);
-      doc.text('Relatório Analítico - Portal dos Sacerdotes', 14, 22);
+      doc.text('Relatório Analítico - Ase Connect', 14, 22);
       
       doc.setFontSize(10);
       doc.setTextColor(100);
@@ -144,7 +144,7 @@ export default function Relatorios() {
         
         const shareData = {
           title: 'Relatório Analítico',
-          text: `*Relatório Analítico - Portal dos Sacerdotes*\nData: ${format(new Date(), 'dd/MM/yyyy HH:mm')}\n\nForam registrados ${sortedFin.length} lançamentos. Baixe o PDF no sistema para ver os detalhes.`,
+          text: `*Relatório Analítico - Ase Connect*\nData: ${format(new Date(), 'dd/MM/yyyy HH:mm')}\n\nForam registrados ${sortedFin.length} lançamentos. Baixe o PDF no sistema para ver os detalhes.`,
         };
 
         if (navigator.share) {

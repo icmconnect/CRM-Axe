@@ -2,46 +2,40 @@ import { useEffect, useRef } from 'react';
 
 export function useKeepAwake() {
   const wakeLockRef = useRef<any>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     async function requestWakeLock() {
-      // Método 1: Screen Wake Lock API (navegadores modernos)
-      if ('wakeLock' in navigator) {
+      if ('wakeLock' in navigator && isMountedRef.current) {
         try {
           wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-          console.log('✅ Wake Lock ativado');
-          
-          // Reconquistar se perder (ex: usuário sai e volta)
-          wakeLockRef.current.addEventListener('release', () => {
-            console.log('⚠️ Wake Lock perdido, reconquistando...');
-            requestWakeLock();
-          });
         } catch (err) {
-          console.log('⚠️ Wake Lock não disponível:', err);
+          // Silent fallback
         }
       }
-      
-      // Método 2: Ping silencioso (fallback para navegadores antigos)
-      // Mantém a conexão viva com o servidor
-      const pingInterval = setInterval(async () => {
-        try {
-          await fetch('/api/heartbeat');
-          // console.log('💓 Ping heartbeat');
-        } catch {
-          // Silencioso - não atrapalha o usuário
-        }
-      }, 30000); // A cada 30 segundos
-      
-      return () => clearInterval(pingInterval);
     }
-    
+
     requestWakeLock();
-    
-    // Liberar wake lock quando sair da página
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      isMountedRef.current = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (wakeLockRef.current) {
-        wakeLockRef.current.release();
+        try {
+          wakeLockRef.current.release();
+        } catch {}
       }
     };
   }, []);
 }
+

@@ -92,22 +92,19 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FCFBF8] p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-md flex flex-col items-center bg-white p-6 sm:p-10 rounded-[2rem] shadow-2xl shadow-orange-100/50 border border-orange-50/50">
+    <div className="min-h-screen flex items-center justify-center overflow-hidden bg-[#FCFBF8] p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-md flex flex-col items-center bg-white p-6 sm:p-10 rounded-[2rem] shadow-2xl shadow-orange-100/50 border border-orange-50/50 max-h-[96vh] overflow-y-auto">
         {/* Logo */}
-        <div className="w-28 h-28 sm:w-36 sm:h-36 mb-6 drop-shadow-2xl">
-          <Logo />
+        <div className="mb-4">
+          <Logo variant="vertical" className="h-44 sm:h-56 w-auto mx-auto object-contain drop-shadow-xl" />
         </div>
 
         {/* Typography */}
-        <div className="text-center mb-10">
-          <p className="text-[10px] sm:text-xs font-bold tracking-[0.2em] text-[#B45309] uppercase mb-4 opacity-80">
+        <div className="text-center mb-6">
+          <p className="text-[10px] sm:text-xs font-bold tracking-[0.2em] text-[#B45309] uppercase mb-2 opacity-80">
             ERP Sistema Gerenciamento
           </p>
-          <h1 className="text-3xl sm:text-5xl font-serif font-bold text-[#0F172A] mb-4 tracking-tight">
-            Portal dos Sacerdotes
-          </h1>
-          <div className="text-[#64748B] text-sm sm:text-lg leading-relaxed px-4">
+          <div className="text-[#64748B] text-sm sm:text-base leading-relaxed px-2">
             <p>Gestão profissional para casas de axé.</p>
           </div>
         </div>
@@ -120,21 +117,21 @@ export default function Login() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full bg-white border-2 border-slate-200 hover:border-[#E87000] text-slate-700 font-bold py-4 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70"
+            className="w-full bg-white border-2 border-slate-200 hover:border-[#E87000] text-slate-700 font-bold py-3.5 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
             Entrar com Google
           </button>
         </div>
 
-        <div className="w-full flex items-center gap-4 my-6">
+        <div className="w-full flex items-center gap-4 my-4">
           <div className="h-px bg-slate-200 flex-1"></div>
           <span className="text-slate-400 text-[10px] font-medium uppercase tracking-widest">ou use e-mail</span>
           <div className="h-px bg-slate-200 flex-1"></div>
         </div>
 
         {/* Auth Form */}
-        <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
+        <form onSubmit={handleEmailAuth} className="w-full space-y-3.5 mb-4">
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -142,7 +139,7 @@ export default function Login() {
               placeholder="Seu e-mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#E87000] focus:border-[#E87000] outline-none transition-all text-sm"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#E87000] focus:border-[#E87000] outline-none transition-all text-sm"
               required
             />
           </div>
@@ -153,7 +150,7 @@ export default function Login() {
               placeholder="Sua senha"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#E87000] focus:border-[#E87000] outline-none transition-all text-sm"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#E87000] focus:border-[#E87000] outline-none transition-all text-sm"
               required
             />
           </div>
@@ -188,7 +185,7 @@ export default function Login() {
 
         <button
           onClick={() => setIsRegistering(!isRegistering)}
-          className="text-[#E87000] font-bold text-xs hover:underline mb-8"
+          className="text-[#E87000] font-bold text-xs hover:underline mb-4"
         >
           {isRegistering ? 'Já tenho uma conta? Entrar' : 'Não tem conta? Cadastre-se'}
         </button>
@@ -196,7 +193,7 @@ export default function Login() {
         {/* Share Button */}
         <button
           onClick={handleCopyLink}
-          className="w-full bg-slate-50 text-slate-500 hover:text-[#E87000] font-semibold py-3 px-6 rounded-xl transition-all duration-200 mb-8 flex items-center justify-center gap-2 text-sm"
+          className="w-full bg-slate-50 text-slate-500 hover:text-[#E87000] font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 mb-4 flex items-center justify-center gap-2 text-sm"
         >
           {copied ? (
             <><Check size={18} className="text-emerald-500" /> Link Copiado!</>
@@ -206,13 +203,20 @@ export default function Login() {
         </button>
 
         {/* Tip Card */}
-        <div className="w-full bg-red-50 border border-red-100 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center mb-2 text-red-600 font-bold text-[10px] sm:text-xs tracking-wider uppercase">
+        <div className="w-full bg-red-50 border border-red-100 rounded-2xl p-3.5 sm:p-4 shadow-sm mb-3">
+          <div className="flex items-center mb-1.5 text-red-600 font-bold text-[10px] sm:text-xs tracking-wider uppercase">
             <Info size={16} className="mr-2" />
             Aviso Importante:
           </div>
           <p className="text-red-700 text-[10px] sm:text-xs leading-relaxed font-medium">
             Para melhor funcionamento, abra este link diretamente no <strong className="font-bold underline">Chrome</strong> ou <strong className="font-bold underline">Safari</strong>. Evite usar o navegador interno do WhatsApp.
+          </p>
+        </div>
+
+        {/* Shared Computer Notice */}
+        <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 sm:p-3.5 shadow-sm">
+          <p className="text-slate-600 text-[10px] sm:text-xs leading-relaxed text-center font-medium">
+            Em computadores compartilhados, encerre sua sessão ao terminar e evite manter dados da plataforma disponíveis offline.
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import admin from 'firebase-admin';
+import Stripe from 'stripe';
 import ocrRouter from './api/gemini/ocr';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,9 +45,109 @@ async function startServer() {
     return res.status(403).json({ error: 'Acesso negado.' });
   }
 
+  // INÍCIO - ROTAS STRIPE (Webhook precisa vir ANTES do express.json)
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock', {
+    apiVersion: '2026-08-26.dahlia',
+  });
+
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+    try {
+      if (!webhookSecret) throw new Error('Webhook secret ausente');
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error(`⚠️ Webhook Error: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Processamento dos eventos
+    try {
+      const db = admin.firestore();
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const userId = session.client_reference_id;
+          if (userId) {
+            await db.collection('users').doc(userId).set({
+              stripeCustomerId: session.customer,
+              subscriptionStatus: 'active',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+          break;
+        }
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const customerId = subscription.customer as string;
+          
+          // Buscar usuário pelo customerId
+          const usersRef = db.collection('users');
+          const snapshot = await usersRef.where('stripeCustomerId', '==', customerId).get();
+          
+          if (!snapshot.empty) {
+            const userDoc = snapshot.docs[0];
+            await userDoc.ref.update({
+              subscriptionStatus: subscription.status,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          break;
+        }
+      }
+      res.json({ received: true });
+    } catch (error) {
+      console.error('Erro ao processar evento:', error);
+      res.status(500).send('Erro interno');
+    }
+  });
+  // FIM - ROTAS STRIPE
+
   // JSON and URL-encoded body parsers with limits
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+  // API Checkout Stripe
+  app.get('/api/checkout', async (req, res) => {
+    const planId = req.query.plan as string;
+    const userId = req.query.userId as string; // Em uma API real segura, use o token JWT para pegar o ID.
+
+    // Importar config
+    // Para simplificar, estamos pegando a constante diretamente para não travar o build caso a importação falhe:
+    const prices: Record<string, string> = {
+      essencial: 'price_1UEag7BejuJh61udGrM5w6oo',
+      comunidade: 'price_1UEahkBejuJh61udF758QtDQ',
+      federacao: 'price_1UEaiWBejuJh61uduZGizvCM',
+      anual: 'price_1UEajLBejuJh61udOqNGOrVQ',
+    };
+
+    const priceId = prices[planId];
+    if (!priceId) return res.status(400).json({ error: 'Plano inválido' });
+
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          { price: priceId, quantity: 1 }
+        ],
+        mode: 'subscription',
+        client_reference_id: userId || 'anonymous',
+        success_url: `${req.protocol}://${req.get('host')}/planos?success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/planos?canceled=true`,
+      });
+
+      if (session.url) {
+        res.redirect(303, session.url);
+      } else {
+        res.status(500).json({ error: 'Erro ao gerar checkout' });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // API routes FIRST
   app.get('/api/heartbeat', (req, res) => {
@@ -67,7 +168,7 @@ async function startServer() {
 
   // Vite middleware for development
   const isProd = process.env.NODE_ENV === 'production';
-  const distPath = path.join(__dirname, 'dist');
+  const distPath = __dirname.endsWith("dist") ? __dirname : path.join(__dirname, "dist");
   
   if (!isProd) {
     try {

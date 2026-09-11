@@ -1,5 +1,5 @@
 /**
- * Validadores de dados para o Portal dos Sacerdotes
+ * Validadores de dados para o Ase Connect
  */
 
 export interface ValidacaoResultado {

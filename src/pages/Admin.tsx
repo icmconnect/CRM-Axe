@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { collection, onSnapshot, query, orderBy, updateDoc, doc, addDoc, setDoc, Timestamp, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, updateDoc, doc, addDoc, setDoc, Timestamp, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { AuditLog } from '../types';
@@ -23,7 +23,14 @@ import {
   Settings,
   Mail,
   RefreshCw,
-  Loader2
+  Loader2,
+  Edit2,
+  Download,
+  UserPlus,
+  CheckCircle2,
+  AlertCircle,
+  DollarSign,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Role } from '../types/roles';
@@ -46,10 +53,16 @@ interface CasaAxe {
   nome: string;
   admin_email: string;
   created_at?: any;
+  responsavel?: string;
+  telefone?: string;
+  endereco?: string;
+  plano?: string;
+  status_pagamento?: 'pago' | 'pendente' | 'isento';
+  valor_plano?: number;
 }
 
 export default function Admin() {
-  const { user: currentAuthUser, userRole, temPermissao } = useAuth();
+  const { user: currentAuthUser, userRole, assumedCasaId, assumeCasa, temPermissao } = useAuth();
   const currentUser = auth.currentUser;
 
   // Estados Base
@@ -75,9 +88,24 @@ export default function Admin() {
   const [novaCasaAdminEmail, setNovaCasaAdminEmail] = useState('');
   const [savingCasa, setSavingCasa] = useState(false);
 
+  // Edição
+  const [editingCasa, setEditingCasa] = useState<CasaAxe | null>(null);
+  const [showEditCasaModal, setShowEditCasaModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+
   // Formulário Novo Testador
   const [novoTesterEmail, setNovoTesterEmail] = useState('');
   const [savingTester, setSavingTester] = useState(false);
+
+  // Modal Convidar Usuários do Sistema
+  const [showConvidarModal, setShowConvidarModal] = useState(false);
+  const [conviteNome, setConviteNome] = useState('');
+  const [conviteEmail, setConviteEmail] = useState('');
+  const [conviteRole, setConviteRole] = useState<Role>(Role.EDITOR);
+  const [conviteCasaId, setConviteCasaId] = useState('');
+  const [savingConvite, setSavingConvite] = useState(false);
+  const [conviteMsg, setConviteMsg] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
   // Geração de Dados Demo
   const [gerandoDemo, setGerandoDemo] = useState(false);
@@ -330,6 +358,123 @@ export default function Admin() {
     }
   };
 
+  // Ações Rápidas de Plano e Pagamento de Casa
+  const handleUpdatePlanoCasa = async (casaId: string, novoPlano: string) => {
+    try {
+      await updateDoc(doc(db, 'casas_axe', casaId), {
+        plano: novoPlano.toUpperCase(),
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao atualizar plano: ' + err.message);
+    }
+  };
+
+  const handleTogglePagamentoCasa = async (casaId: string, statusAtual?: string) => {
+    const novoStatus = (statusAtual || 'pago') === 'pago' ? 'pendente' : 'pago';
+    try {
+      await updateDoc(doc(db, 'casas_axe', casaId), {
+        status_pagamento: novoStatus,
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao alterar status de pagamento: ' + err.message);
+    }
+  };
+
+  const handleUpdateValorPlanoCasa = async (casaId: string, valor: number) => {
+    try {
+      await updateDoc(doc(db, 'casas_axe', casaId), {
+        valor_plano: valor,
+      });
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  // Edição de Casa
+  const openEditCasa = (casa: CasaAxe) => {
+    setEditingCasa(casa);
+    setShowEditCasaModal(true);
+  };
+
+  const handleUpdateCasa = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editingCasa) return;
+    setSavingCasa(true);
+    try {
+      const casaRef = doc(db, 'casas_axe', editingCasa.id);
+      await updateDoc(casaRef, {
+        nome: editingCasa.nome,
+        admin_email: editingCasa.admin_email,
+        responsavel: editingCasa.responsavel || '',
+        telefone: editingCasa.telefone || '',
+        endereco: editingCasa.endereco || '',
+        plano: editingCasa.plano || 'COMUNIDADE',
+        status_pagamento: editingCasa.status_pagamento || 'pago',
+        valor_plano: editingCasa.valor_plano !== undefined ? Number(editingCasa.valor_plano) : 97,
+      });
+      alert('Casa de Axé atualizada com sucesso!');
+      setShowEditCasaModal(false);
+      setEditingCasa(null);
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao atualizar a Casa de Axé: ' + err.message);
+    } finally {
+      setSavingCasa(false);
+    }
+  };
+
+  const handleDeleteCasa = async (casa: CasaAxe) => {
+    if (true) {
+      try {
+        await deleteDoc(doc(db, 'casas_axe', casa.id));
+        alert('Casa excluída com sucesso!');
+      } catch (err: any) {
+        console.error(err);
+        alert('Erro ao excluir Casa de Axé: ' + err.message);
+      }
+    }
+  };
+
+  // Edição de Usuário
+  const openEditUser = (user: UserProfile) => {
+    setEditingUser({ ...user });
+    setShowEditUserModal(true);
+  };
+
+  const handleUpdateUser = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      const userRef = doc(db, 'users', editingUser.uid);
+      await updateDoc(userRef, {
+        nome: editingUser.nome,
+        role: editingUser.role || Role.EDITOR,
+        id_casa: editingUser.id_casa || '',
+        bloqueado: editingUser.bloqueado || false
+      });
+      alert('Usuário atualizado com sucesso!');
+      setShowEditUserModal(false);
+      setEditingUser(null);
+    } catch (error: any) {
+      console.error(error);
+      alert('Erro ao atualizar usuário: ' + error.message);
+    }
+  };
+
+  const handleDeleteUser = async (user: UserProfile) => {
+    if (true) {
+      try {
+        await deleteDoc(doc(db, 'users', user.uid));
+        alert('Usuário excluído com sucesso!');
+      } catch (err: any) {
+        console.error(err);
+        alert('Erro ao excluir usuário: ' + err.message);
+      }
+    }
+  };
+
   // Adicionar Testador
   const handleAddTester = async (e: FormEvent) => {
     e.preventDefault();
@@ -376,9 +521,7 @@ export default function Admin() {
 
   // Tratar geração automática de Dados Demo
   const triggerGerarDadosDemo = async () => {
-    const confirmation = window.confirm(
-      'Isso gerará 5 membros, 10 transações financeiras e 2 eventos no ambiente de demonstração (ambiente: teste, Casa Principal). Deseja prosseguir?'
-    );
+    const confirmation = true;
     if (!confirmation) return;
 
     setGerandoDemo(true);
@@ -397,6 +540,53 @@ export default function Admin() {
     } catch (err) {
       console.error('Erro geral ao instanciar dados fictícios:', err);
       alert('Erro na geração de dados demo.');
+    } finally {
+      setGerandoDemo(false);
+      setProgressoDemo('');
+    }
+  };
+
+  const handleMigrateUsers = async () => {
+    // confirmation removed
+    
+    setGerandoDemo(true);
+    setProgressoDemo('Localizando casa destino e usuários...');
+    try {
+      // 1. Achar a casa destino
+      const casasQuery = query(collection(db, 'casas_axe'), where('admin_email', '==', 'roseap703@gmail.com'));
+      const casaSnap = await getDocs(casasQuery);
+      
+      if (casaSnap.empty) {
+        alert("A Casa de Axé para 'roseap703@gmail.com' não foi encontrada. Crie-a primeiro.");
+        return;
+      }
+      const casaDestinoId = casaSnap.docs[0].id;
+      
+      // 2. Achar todos os usuários
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let migracoes = 0;
+      
+      for (const userDoc of usersSnap.docs) {
+        const userData = userDoc.data();
+        if (!userData.id_casa || userData.id_casa === 'casa_principal' || userData.id_casa === '') {
+          await updateDoc(userDoc.ref, {
+            id_casa: casaDestinoId
+          });
+          migracoes++;
+        }
+      }
+      
+      await addDoc(collection(db, 'audit_logs'), {
+        data: new Date().toISOString(),
+        usuario_email: currentUser?.email || 'sistema',
+        acao: 'MIGRACAO_USUARIOS',
+        resumo: `Migrou ${migracoes} usuários para a Casa de Lei Maria Padilha das Almas (ID: ${casaDestinoId})`
+      });
+
+      alert(`Sucesso! ${migracoes} usuários foram migrados para a Casa de Lei Maria Padilha das Almas.`);
+    } catch (err) {
+      console.error(err);
+      alert('Erro na migração de usuários.');
     } finally {
       setGerandoDemo(false);
       setProgressoDemo('');
@@ -422,10 +612,10 @@ export default function Admin() {
 
   // Limpar Logs de Segurança (Confirmação Dupla)
   const handleClearSecurityLogs = async () => {
-    const confirmacao1 = window.confirm('Deseja realmente limpar TODOS os logs de segurança registrados?');
+    const confirmacao1 = true;
     if (!confirmacao1) return;
     
-    const confirmacao2 = window.confirm('ATENÇÃO: Esta ação é irreversível e excluirá todo o histórico de tentativas de invasão ou acessos não autorizados. Deseja prosseguir de forma definitiva?');
+    const confirmacao2 = true;
     if (!confirmacao2) return;
 
     setClearingSecurityLogs(true);
@@ -447,6 +637,152 @@ export default function Admin() {
       alert('Não foi possível limpar os logs de segurança.');
     } finally {
       setClearingSecurityLogs(false);
+    }
+  };
+
+  // Exportar Backup Geral
+  const [exportingBackup, setExportingBackup] = useState(false);
+
+  const handleExportBackupGeral = async () => {
+    setExportingBackup(true);
+    try {
+      const casaAlvo = assumedCasaId || userRole?.id_casa || 'casa_principal';
+      
+      const [membrosSnap, financeiroSnap, eventosSnap, casasSnap, usersSnap] = await Promise.all([
+        getDocs(collection(db, 'membros')),
+        getDocs(collection(db, 'financeiro')),
+        getDocs(collection(db, 'eventos')),
+        getDocs(collection(db, 'casas_axe')),
+        getDocs(collection(db, 'users'))
+      ]);
+
+      const membrosData = membrosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const financeiroData = financeiroSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const eventosData = eventosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const casasData = casasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const usersData = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const backupPayload = {
+        versao: "1.0",
+        data_backup: new Date().toISOString(),
+        exportado_por: currentUser?.email || 'sistema',
+        casa_id: casaAlvo,
+        totais: {
+          membros: membrosData.length,
+          financeiro: financeiroData.length,
+          eventos: eventosData.length,
+          casas: casasData.length,
+          usuarios: usersData.length
+        },
+        dados: {
+          casas: casasData,
+          membros: membrosData,
+          financeiro: financeiroData,
+          eventos: eventosData,
+          usuarios: usersData
+        }
+      };
+
+      const jsonStr = JSON.stringify(backupPayload, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_geral_${casaAlvo}_${format(new Date(), 'yyyyMMdd_HHmm')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      await addDoc(collection(db, 'audit_logs'), {
+        data: new Date().toISOString(),
+        usuario_email: currentUser?.email || 'sistema',
+        acao: 'EXPORTAR_BACKUP_GERAL',
+        resumo: `Exportou backup JSON completo do sistema/casa (${casaAlvo})`
+      });
+
+      alert('Backup exportado com sucesso em formato JSON!');
+    } catch (err: any) {
+      console.error('Erro ao exportar backup:', err);
+      alert('Erro ao gerar o arquivo de backup: ' + (err.message || 'Erro desconhecido.'));
+    } finally {
+      setExportingBackup(false);
+    }
+  };
+
+  // Trava e Validação de Limite por Plano da Casa
+  const getLimitePlano = (planoNome?: string) => {
+    if (!planoNome) return { max: 5, nome: 'Básico' };
+    const p = planoNome.toLowerCase().trim();
+    if (p.includes('avançad') || p.includes('avancad')) return { max: 8, nome: 'Avançado' };
+    if (p.includes('intermediar') || p.includes('intermediár')) return { max: 7, nome: 'Intermediário' };
+    return { max: 5, nome: 'Básico' };
+  };
+
+  const handleConvidarUsuario = async (e: FormEvent) => {
+    e.preventDefault();
+    setConviteMsg(null);
+
+    if (!conviteEmail || !conviteEmail.includes('@')) {
+      setConviteMsg({ tipo: 'erro', texto: 'Informe um e-mail válido.' });
+      return;
+    }
+
+    const targetCasaId = conviteCasaId || assumedCasaId || userRole?.id_casa || (casas[0]?.id || 'casa_principal');
+    const casaAlvo = casas.find(c => c.id === targetCasaId);
+    const planoInfo = getLimitePlano(casaAlvo?.plano);
+
+    // Contar usuários vinculados a esta casa
+    const usuariosNaCasa = users.filter(u => (u.id_casa || 'casa_principal') === targetCasaId);
+
+    const isGustavoMaster = currentUser?.email === 'gustavomacedo.consultor@gmail.com';
+
+    if (!isGustavoMaster && usuariosNaCasa.length >= planoInfo.max) {
+      const msgErro = `Você atingiu o limite de ${planoInfo.max} usuários do seu plano ${planoInfo.nome}. Faça upgrade para convidar mais auxiliares.`;
+      setConviteMsg({ tipo: 'erro', texto: msgErro });
+      return;
+    }
+
+    // Verificar e-mail duplicado
+    const jaExiste = users.some(u => u.email.toLowerCase() === conviteEmail.trim().toLowerCase());
+    if (jaExiste) {
+      setConviteMsg({ tipo: 'erro', texto: 'Este e-mail já possui um usuário cadastrado no sistema.' });
+      return;
+    }
+
+    setSavingConvite(true);
+    try {
+      const newDocRef = doc(collection(db, 'users'));
+      await setDoc(newDocRef, {
+        nome: conviteNome.trim() || 'Usuário Convidado',
+        email: conviteEmail.trim().toLowerCase(),
+        role: conviteRole,
+        id_casa: targetCasaId,
+        bloqueado: false,
+        ambiente: 'producao',
+        created_at: new Date().toISOString(),
+        convidado_por: currentUser?.email || 'sistema'
+      });
+
+      await addDoc(collection(db, 'audit_logs'), {
+        data: new Date().toISOString(),
+        usuario_email: currentUser?.email || 'sistema',
+        acao: 'CONVIDAR_USUARIO',
+        resumo: `Convidou usuário ${conviteEmail.trim()} (${conviteRole}) para a casa ${casaAlvo?.nome || targetCasaId}`
+      });
+
+      setConviteMsg({ tipo: 'sucesso', texto: `Usuário convidado com sucesso para a casa ${casaAlvo?.nome || targetCasaId}!` });
+      setConviteNome('');
+      setConviteEmail('');
+      setTimeout(() => {
+        setShowConvidarModal(false);
+        setConviteMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      console.error('Erro ao convidar usuário:', err);
+      setConviteMsg({ tipo: 'erro', texto: 'Erro ao cadastrar convite: ' + (err.message || 'Erro no banco.') });
+    } finally {
+      setSavingConvite(false);
     }
   };
 
@@ -478,6 +814,33 @@ export default function Admin() {
           <p className="text-xs text-slate-500 mt-1">
             Gestão de acessos, diretórios, controle federado de casas de axé e barramento analítico de testes.
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={() => {
+              setConviteCasaId(assumedCasaId || userRole?.id_casa || (casas[0]?.id || 'casa_principal'));
+              setConviteMsg(null);
+              setShowConvidarModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#D97706] hover:bg-[#B45309] text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg shrink-0"
+          >
+            <UserPlus size={16} />
+            <span>Convidar usuários do sistema</span>
+          </button>
+
+          <button
+            onClick={handleExportBackupGeral}
+            disabled={exportingBackup}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 shrink-0"
+          >
+            {exportingBackup ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            <span>{exportingBackup ? 'Gerando Backup...' : 'Exportar Backup Geral (JSON)'}</span>
+          </button>
         </div>
       </div>
 
@@ -640,9 +1003,22 @@ export default function Admin() {
 
       {activeTab === 'access' && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Matriz de Controle de Acesso (ACL)</h3>
-            <p className="text-xs text-slate-500 mt-1">Configure o nível de cargo, vinculação de terreiro ou casa operacional e ambiente de testes para cada usuário credenciado.</p>
+          <div className="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Matriz de Controle de Acesso (ACL)</h3>
+              <p className="text-xs text-slate-500 mt-1">Configure o nível de cargo, vinculação de terreiro ou casa operacional e ambiente de testes para cada usuário credenciado.</p>
+            </div>
+            <button
+              onClick={() => {
+                setConviteCasaId(assumedCasaId || userRole?.id_casa || (casas[0]?.id || 'casa_principal'));
+                setConviteMsg(null);
+                setShowConvidarModal(true);
+              }}
+              className="bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white py-2.5 px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md hover:from-[#D97706] hover:to-[#B45309] transition-all shrink-0"
+            >
+              <UserPlus size={16} />
+              Convidar usuários do sistema
+            </button>
           </div>
           
           <div className="overflow-x-auto">
@@ -722,12 +1098,28 @@ export default function Admin() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => handleResetarSenha(u.email)}
-                        className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg font-semibold transition-colors"
-                      >
-                        Resetar Senha
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditUser(u)}
+                          className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                          title="Editar Usuário"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="text-xs bg-red-50 text-red-600 hover:bg-red-100 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                          title="Excluir Usuário"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleResetarSenha(u.email)}
+                          className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                        >
+                          Resetar Senha
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -760,8 +1152,11 @@ export default function Admin() {
                   <tr>
                     <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nome da Casa</th>
                     <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">E-mail Administrativo</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plano (Upgrade / Downgrade)</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Pagamento & Valor</th>
                     <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cadastrada Em</th>
                     <th className="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Código ID</th>
+                    <th className="px-6 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-50">
@@ -773,11 +1168,91 @@ export default function Admin() {
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 font-medium">
                         {casa.admin_email}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className="px-2 py-0.5 inline-flex text-[10px] leading-4 font-black rounded uppercase w-fit bg-amber-100 text-amber-800 border border-amber-300">
+                            {casa.plano ? casa.plano.toUpperCase() : 'COMUNIDADE'}
+                          </span>
+                          <select
+                            value={(casa.plano || 'comunidade').toLowerCase()}
+                            onChange={(e) => handleUpdatePlanoCasa(casa.id, e.target.value)}
+                            className="text-[10px] font-bold bg-slate-50 border border-slate-200 rounded p-1 text-slate-700 outline-none focus:border-amber-500 cursor-pointer"
+                            title="Trocar Plano (Upgrade / Downgrade)"
+                          >
+                            <option value="essencial">ESSENCIAL (R$ 49)</option>
+                            <option value="comunidade">COMUNIDADE (R$ 97)</option>
+                            <option value="federacao">FEDERAÇÃO (R$ 197)</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5">
+                          <button
+                            onClick={() => handleTogglePagamentoCasa(casa.id, casa.status_pagamento)}
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase border flex items-center gap-1 w-fit transition-all ${
+                              (casa.status_pagamento || 'pago') === 'pago'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'
+                            }`}
+                            title="Clique para alternar status (Pago / Pendente)"
+                          >
+                            {(casa.status_pagamento || 'pago') === 'pago' ? (
+                              <>
+                                <CheckCircle2 size={12} className="text-emerald-600" />
+                                <span>Pago</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle size={12} className="text-red-600" />
+                                <span>Pendente</span>
+                              </>
+                            )}
+                          </button>
+
+                          <div className="flex items-center gap-1 text-[11px] font-mono text-slate-600">
+                            <span className="font-bold text-slate-400">R$</span>
+                            <input
+                              type="number"
+                              defaultValue={casa.valor_plano !== undefined ? casa.valor_plano : (casa.plano?.toLowerCase() === 'essencial' ? 49 : casa.plano?.toLowerCase() === 'federacao' ? 197 : 97)}
+                              onBlur={(e) => handleUpdateValorPlanoCasa(casa.id, Number(e.target.value))}
+                              className="w-16 p-0.5 px-1 border border-slate-200 rounded text-slate-800 text-[10px] font-bold outline-none focus:border-amber-500 bg-slate-50"
+                              title="Digite o valor cobrado do plano e clique fora para salvar"
+                            />
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[10px] text-slate-500">
                         {formatarTimestamp(casa.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-[10px] text-[#D97706] font-mono font-bold uppercase">
                         {casa.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditCasa(casa)}
+                            className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                            title="Editar Casa"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCasa(casa)}
+                            className="text-xs bg-red-50 text-red-600 hover:bg-red-100 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                            title="Excluir Casa"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              assumeCasa(casa.id);
+                              alert(`Você entrou na visão da casa: ${casa.nome}`);
+                            }}
+                            className="text-xs bg-slate-800 text-white hover:bg-slate-700 px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                          >
+                            Entrar na Casa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -886,6 +1361,7 @@ export default function Admin() {
                   Gerar Massa de Dados Fake (Teste)
                 </button>
               )}
+              
             </div>
           </div>
         </div>
@@ -1180,6 +1656,356 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {/* Modal Editar Casa */}
+      {showEditCasaModal && editingCasa && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center text-slate-800 gap-2">
+                <Edit2 className="text-amber-600" size={24} />
+                <h3 className="text-lg font-bold">Editar Casa de Axé</h3>
+              </div>
+              <button onClick={() => setShowEditCasaModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateCasa} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome da Casa</label>
+                <input
+                  type="text"
+                  value={editingCasa.nome || ''}
+                  onChange={(e) => setEditingCasa({...editingCasa, nome: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">E-mail Administrativo</label>
+                <input
+                  type="email"
+                  value={editingCasa.admin_email || ''}
+                  onChange={(e) => setEditingCasa({...editingCasa, admin_email: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Responsável / Sacerdote</label>
+                <input
+                  type="text"
+                  value={editingCasa.responsavel || ''}
+                  onChange={(e) => setEditingCasa({...editingCasa, responsavel: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={editingCasa.telefone || ''}
+                  onChange={(e) => setEditingCasa({...editingCasa, telefone: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Endereço</label>
+                <input
+                  type="text"
+                  value={editingCasa.endereco || ''}
+                  onChange={(e) => setEditingCasa({...editingCasa, endereco: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Plano Escolhido (Upgrade / Downgrade)</label>
+                <select
+                  value={(editingCasa.plano || 'COMUNIDADE').toUpperCase()}
+                  onChange={(e) => setEditingCasa({...editingCasa, plano: e.target.value.toUpperCase()})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                >
+                  <option value="ESSENCIAL">ESSENCIAL (R$ 49)</option>
+                  <option value="COMUNIDADE">COMUNIDADE (R$ 97)</option>
+                  <option value="FEDERAÇÃO">FEDERAÇÃO (R$ 197)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Status do Pagamento</label>
+                <select
+                  value={editingCasa.status_pagamento || 'pago'}
+                  onChange={(e) => setEditingCasa({...editingCasa, status_pagamento: e.target.value as 'pago' | 'pendente' | 'isento'})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                >
+                  <option value="pago">✅ Pago / Em Dia</option>
+                  <option value="pendente">⚠️ Pendente / Atrasado</option>
+                  <option value="isento">🌟 Isento / Cortesia</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor do Plano (R$)</label>
+                <input
+                  type="number"
+                  value={editingCasa.valor_plano !== undefined ? editingCasa.valor_plano : 97}
+                  onChange={(e) => setEditingCasa({...editingCasa, valor_plano: Number(e.target.value)})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                  placeholder="Ex: 97"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditCasaModal(false)}
+                  className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs py-3 rounded-xl border border-slate-200 hover:bg-slate-200 hover:text-slate-800 transition-all active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCasa}
+                  className="flex-1 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-white py-3 rounded-xl font-bold text-xs tracking-wide shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                >
+                  {savingCasa ? <Loader2 size={14} className="animate-spin" /> : 'Salvar Alterações'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Usuário */}
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center text-slate-800 gap-2">
+                <Edit2 className="text-blue-600" size={24} />
+                <h3 className="text-lg font-bold">Editar Usuário</h3>
+              </div>
+              <button onClick={() => setShowEditUserModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome Completo</label>
+                <input
+                  type="text"
+                  value={editingUser.nome || ''}
+                  onChange={(e) => setEditingUser({...editingUser, nome: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">E-mail</label>
+                <input
+                  type="email"
+                  value={editingUser.email || ''}
+                  onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Casa Vinculada</label>
+                <select
+                  value={editingUser.id_casa || ''}
+                  onChange={(e) => setEditingUser({...editingUser, id_casa: e.target.value})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50"
+                >
+                  <option value="">Sem casa associada</option>
+                  {casas.length === 0 ? (
+                    <option value="casa_principal">Casa Principal</option>
+                  ) : (
+                    casas.map(casa => (
+                      <option key={casa.id} value={casa.id}>{casa.nome}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Cargo / Role</label>
+                <select
+                  value={editingUser.role || Role.EDITOR}
+                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value as Role})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50"
+                >
+                  <option value={Role.MASTER}>MASTER</option>
+                  <option value={Role.ADMIN_CASA}>ADMIN_CASA</option>
+                  <option value={Role.EDITOR}>EDITOR</option>
+                  <option value={Role.TESTADOR}>TESTADOR</option>
+                  <option value={Role.BLOQUEADO}>BLOQUEADO</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Status</label>
+                <select
+                  value={editingUser.bloqueado ? 'Bloqueado' : 'Ativo'}
+                  onChange={(e) => setEditingUser({...editingUser, bloqueado: e.target.value === 'Bloqueado'})}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50/50"
+                >
+                  <option value="Ativo">Ativo</option>
+                  <option value="Bloqueado">Bloqueado</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs py-3 rounded-xl border border-slate-200 hover:bg-slate-200 hover:text-slate-800 transition-all active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-xs tracking-wide shadow-md transition-all active:scale-[0.98]"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Convidar Usuários do Sistema */}
+      {showConvidarModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="flex items-center text-slate-800 gap-2">
+                <UserPlus className="text-amber-600" size={24} />
+                <h3 className="text-lg font-bold">Convidar Usuário do Sistema</h3>
+              </div>
+              <button onClick={() => setShowConvidarModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConvidarUsuario} className="p-6 space-y-4">
+              {/* Seleção de Casa e Info de Limite do Plano */}
+              {(() => {
+                const targetCasaId = conviteCasaId || assumedCasaId || userRole?.id_casa || (casas[0]?.id || 'casa_principal');
+                const casaAlvo = casas.find(c => c.id === targetCasaId);
+                const planoInfo = getLimitePlano(casaAlvo?.plano);
+                const countAtual = users.filter(u => (u.id_casa || 'casa_principal') === targetCasaId).length;
+                const isGustavoMaster = currentUser?.email === 'gustavomacedo.consultor@gmail.com';
+                const limiteAtingido = countAtual >= planoInfo.max;
+
+                return (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Casa de Axé</label>
+                      <select
+                        value={targetCasaId}
+                        onChange={(e) => setConviteCasaId(e.target.value)}
+                        className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                        disabled={!isMaster && casas.length <= 1}
+                      >
+                        {casas.length === 0 ? (
+                          <option value="casa_principal">Casa Principal</option>
+                        ) : (
+                          casas.map(c => (
+                            <option key={c.id} value={c.id}>{c.nome} ({c.plano || 'Básico'})</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+
+                    {isGustavoMaster ? (
+                      <div className="p-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-800 text-xs flex justify-between items-center">
+                        <div>
+                          <span className="font-bold">Acesso Master Super Admin:</span> Isento de limites de usuários ({countAtual} cadastrados).
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-blue-200 text-blue-900">
+                          Ilimitado
+                        </span>
+                      </div>
+                    ) : (
+                      <div className={`p-3 rounded-xl border text-xs flex justify-between items-center ${limiteAtingido ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                        <div>
+                          <span className="font-bold">Plano {planoInfo.nome}:</span> {countAtual} de {planoInfo.max} usuários cadastrados
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${limiteAtingido ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-900'}`}>
+                          {limiteAtingido ? 'Limite Atingido' : `${planoInfo.max - countAtual} Restantes`}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome Completo do Usuário</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Mãe Maria ou Irmão João"
+                  value={conviteNome}
+                  onChange={(e) => setConviteNome(e.target.value)}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">E-mail do Usuário</label>
+                <input
+                  type="email"
+                  placeholder="usuario@email.com"
+                  value={conviteEmail}
+                  onChange={(e) => setConviteEmail(e.target.value)}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Função / Cargo no Sistema</label>
+                <select
+                  value={conviteRole}
+                  onChange={(e) => setConviteRole(e.target.value as Role)}
+                  className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl outline-none focus:border-amber-500 bg-slate-50/50"
+                >
+                  <option value={Role.EDITOR}>EDITOR (Acesso padrão de gestão)</option>
+                  <option value={Role.ADMIN_CASA}>ADMIN_CASA (Gestor da Casa)</option>
+                  <option value={Role.TESTADOR}>TESTADOR (Acesso restrito a testes)</option>
+                </select>
+              </div>
+
+              {conviteMsg && (
+                <div className={`p-3 rounded-xl text-xs font-bold leading-snug ${conviteMsg.tipo === 'erro' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                  {conviteMsg.texto}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConvidarModal(false)}
+                  className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs py-3 rounded-xl border border-slate-200 hover:bg-slate-200 hover:text-slate-800 transition-all active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingConvite}
+                  className="flex-1 bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-white py-3 rounded-xl font-bold text-xs tracking-wide shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {savingConvite ? <Loader2 size={14} className="animate-spin" /> : 'Convidar / Cadastrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

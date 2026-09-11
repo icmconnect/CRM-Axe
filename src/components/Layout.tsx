@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, DollarSign, LogOut, Download, Calendar, FileText, Shield, Bell, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Users, DollarSign, LogOut, Download, Calendar, FileText, Shield, Bell, Moon, Sun, Menu, X } from 'lucide-react';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -92,7 +92,7 @@ function NotificationsDropdown() {
                 {eventosProximos.length > 0 && (
                   <Link to="/eventos" onClick={() => setIsOpen(false)} className="block p-4 hover:bg-slate-50 transition-colors">
                     <div className="flex items-start">
-                      <div className="bg-amber-100 text-amber-600 p-2 rounded-lg mr-3">
+                      <div className="bg-\[#C59B4B\]/20 text-\[#C59B4B\] p-2 rounded-lg mr-3">
                         <Calendar size={16} />
                       </div>
                       <div>
@@ -127,16 +127,21 @@ function NotificationsDropdown() {
 export default function Layout() {
   const { theme, toggleTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { casa, userRole } = useAuth();
+  const { casa, userRole, assumedCasaId, assumeCasa } = useAuth();
   const currentUser = auth.currentUser;
   const [nomeCasa, setNomeCasa] = useState<string>('');
 
   useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
     async function buscarNomeCasa() {
       if (userRole?.role === 'MASTER' || userRole?.email === 'gustavomacedo.consultor@gmail.com') {
-        setNomeCasa('Portal dos Sacerdotes');
+        setNomeCasa('Ase Connect');
         return;
       }
       
@@ -246,78 +251,161 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] dark:bg-slate-900 flex flex-col md:flex-row font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200">
-      {/* Desktop Sidebar */}
-      <nav className="hidden md:flex w-72 bg-white dark:bg-slate-800 border-r border-[#FDE68A]/30 dark:border-slate-700 flex-col h-screen sticky top-0 shadow-sm transition-colors duration-200">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col items-center text-center">
-          <div className="w-24 h-24 mb-3">
-            <Logo />
-          </div>
-          <h1 className="font-serif font-bold text-xl text-slate-900 dark:text-white leading-tight">Portal dos<br/>Sacerdotes</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium tracking-wide uppercase">Gestão Profissional</p>
-        </div>
-        <ul className="flex-1 px-4 py-6 space-y-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-[#FFF9E6] text-[#D97706] font-semibold shadow-sm border border-[#FDE68A]' 
-                      : 'text-slate-600 hover:bg-slate-50 font-medium'
-                  }`}
-                >
-                  <item.icon className={`mr-3 ${isActive ? 'text-[#D97706]' : 'text-slate-400'}`} size={22} />
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="p-4 border-t border-slate-100 space-y-3">
-          {deferredPrompt && (
-            <button onClick={handleInstallClick} className="flex items-center justify-center w-full px-4 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors text-sm font-semibold shadow-md">
-              <Download className="mr-2" size={18} /> Instalar App
-            </button>
-          )}
-          <button onClick={() => signOut(auth)} className="flex items-center justify-center w-full px-4 py-3 text-red-700 bg-red-50 rounded-xl hover:bg-red-100 transition-colors text-sm font-semibold">
-            <LogOut className="mr-2" size={18} /> Sair
+    <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-[#1A1A1A] font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
+      {assumedCasaId && (
+        <div className="w-full bg-[#C59B4B] text-white z-50 py-1.5 px-4 flex justify-between items-center text-xs font-bold shadow-md shrink-0">
+          <span>Modo Master: Visualizando dados da casa {assumedCasaId}</span>
+          <button onClick={() => assumeCasa(null)} className="bg-white text-[#C59B4B] px-3 py-0.5 rounded hover:bg-slate-50 transition-colors">
+            Sair e Voltar ao Admin
           </button>
         </div>
-      </nav>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 pb-24 md:pb-0 overflow-y-auto h-screen w-full relative">
-        {/* Top Bar with Notifications */}
-        <div className="sticky top-0 z-40 bg-[#FFFDF7]/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between transition-colors duration-200">
-          <div className="w-8 md:hidden"></div> {/* Placeholder para alinhar o título */}
-          <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate mx-2 text-center flex-1">
-            {nomeCasa || '...'}
-          </h1>
-          <div className="flex items-center gap-2">
-             <button 
-               onClick={toggleTheme}
-               className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-               title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-             >
-               {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-             </button>
-             <NotificationsDropdown />
+      <div className="flex-1 flex w-full h-full overflow-hidden relative">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex w-64 shrink-0 flex-col h-full bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-sm z-30 transition-colors duration-200">
+          {/* Logo Container */}
+          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0">
+            <Logo variant="horizontal" className="h-16 sm:h-20 w-auto max-w-full object-contain mx-auto" />
           </div>
-        </div>
-        
-        {/* Trial Status / Billing Banner */}
-        <TrialBanner />
 
-        <div className="max-w-7xl mx-auto p-4 md:p-8">
-          <Outlet />
-        </div>
-      </main>
+          {/* Navigation Menu */}
+          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5">
+            <ul>
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <li key={item.path} className="mb-1.5">
+                    <Link
+                      to={item.path}
+                      className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-[#C59B4B]/10 text-[#C59B4B] dark:bg-[#C59B4B]/20 dark:text-[#E5B869] font-semibold shadow-xs border border-[#C59B4B]/25' 
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-medium'
+                      }`}
+                    >
+                      <item.icon className={`mr-3 shrink-0 ${isActive ? 'text-[#C59B4B] dark:text-[#E5B869]' : 'text-slate-400 dark:text-slate-400'}`} size={20} />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          {/* Sidebar Footer Actions */}
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700 space-y-2.5 shrink-0">
+            {deferredPrompt && (
+              <button onClick={handleInstallClick} className="flex items-center justify-center w-full px-4 py-2.5 bg-slate-900 dark:bg-slate-700 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors text-sm font-semibold shadow-sm">
+                <Download className="mr-2 shrink-0" size={18} /> Instalar App
+              </button>
+            )}
+            <button onClick={() => signOut(auth)} className="flex items-center justify-center w-full px-4 py-2.5 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-semibold">
+              <LogOut className="mr-2 shrink-0" size={18} /> Sair
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Overlay & Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <aside className="relative w-64 max-w-[80vw] bg-white dark:bg-slate-800 h-full flex flex-col shadow-2xl z-10 border-r border-slate-200 dark:border-slate-700">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
+                <Logo variant="horizontal" className="h-10 sm:h-12 w-auto max-w-[150px] object-contain" />
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg transition-colors"
+                  aria-label="Fechar menu"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-1.5">
+                <ul>
+                  {navItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <li key={item.path} className="mb-1">
+                        <Link
+                          to={item.path}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-[#C59B4B]/10 text-[#C59B4B] dark:bg-[#C59B4B]/20 dark:text-[#E5B869] font-semibold shadow-xs border border-[#C59B4B]/25' 
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                          }`}
+                        >
+                          <item.icon className={`mr-3 shrink-0 ${isActive ? 'text-[#C59B4B] dark:text-[#E5B869]' : 'text-slate-400'}`} size={20} />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-700 space-y-2 shrink-0">
+                {deferredPrompt && (
+                  <button onClick={handleInstallClick} className="flex items-center justify-center w-full px-4 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold">
+                    <Download className="mr-2" size={18} /> Instalar App
+                  </button>
+                )}
+                <button onClick={() => signOut(auth)} className="flex items-center justify-center w-full px-4 py-2.5 text-red-700 bg-red-50 rounded-xl text-sm font-semibold">
+                  <LogOut className="mr-2" size={18} /> Sair
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto relative bg-slate-50 dark:bg-[#1A1A1A] pb-24 md:pb-0">
+          {/* Top Bar with Notifications & Mobile Hamburger */}
+          <div className="sticky top-0 z-20 bg-slate-50/90 dark:bg-[#1A1A1A]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between transition-colors duration-200 shrink-0">
+            <div className="flex items-center md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 -ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                aria-label="Abrir menu"
+              >
+                <Menu size={22} />
+              </button>
+            </div>
+            <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate mx-2 text-center md:text-left flex-1">
+              {nomeCasa || '...'}
+            </h1>
+            <div className="flex items-center gap-2">
+               <button 
+                 onClick={toggleTheme}
+                 className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                 title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+               >
+                 {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
+               </button>
+               <NotificationsDropdown />
+            </div>
+          </div>
+          
+          {/* Trial Status / Billing Banner */}
+          <TrialBanner />
+
+          <div className="flex-1 flex flex-col max-w-7xl w-full mx-auto p-4 md:p-8">
+            <Outlet />
+          </div>
+          
+          {/* Footer */}
+          <footer className="mt-auto w-full max-w-7xl mx-auto p-6 flex flex-col items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
+            <Logo variant="horizontal" className="h-12 sm:h-16 w-auto mb-2 object-contain" />
+            <p className="text-[10px] text-slate-400 font-medium">Gestão Profissional para Casas de Axé</p>
+          </footer>
+        </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-20 px-2 z-50 pb-safe shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-around items-center h-20 px-2 z-40 pb-safe shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -325,16 +413,16 @@ export default function Layout() {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                isActive ? 'text-[#D97706]' : 'text-slate-500'
+                isActive ? 'text-[#C59B4B]' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
-              <item.icon size={24} className={isActive ? 'text-[#D97706]' : 'text-slate-400'} />
+              <item.icon size={22} className={isActive ? 'text-[#C59B4B]' : 'text-slate-400 dark:text-slate-400'} />
               <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
             </Link>
           );
         })}
-        <button onClick={() => signOut(auth)} className="flex flex-col items-center justify-center text-red-600">
-          <LogOut size={24} />
+        <button onClick={() => signOut(auth)} className="flex flex-col items-center justify-center text-red-600 dark:text-red-400">
+          <LogOut size={22} />
           <span className="text-[10px] font-medium">Sair</span>
         </button>
       </nav>

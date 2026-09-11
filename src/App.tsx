@@ -37,13 +37,13 @@ function UpdateToast({ onUpdate }: { onUpdate: () => void }) {
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white border border-[#FDE68A] shadow-lg rounded-xl p-4 flex items-center gap-4 animate-in slide-in-from-top-4">
       <div className="text-sm font-medium text-slate-800">
-        <span className="text-[#D97706] font-bold mr-1">Nova versão do Axé disponível!</span>
+        <span className="text-[#D97706] font-bold mr-1">Nova versão disponível!</span>
       </div>
       <button 
         onClick={onUpdate}
         className="bg-[#D97706] hover:bg-[#B45309] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
       >
-        Atualizar Agora
+        Clique aqui para atualizar
       </button>
     </div>
   );
@@ -55,7 +55,7 @@ function InstallPrompt({ deferredPrompt, onInstall }: { deferredPrompt: any, onI
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-white border border-[#FDE68A] shadow-lg rounded-2xl p-5 flex flex-col gap-4 animate-in slide-in-from-bottom-4 max-w-[90%] w-80">
       <div className="text-center">
         <h3 className="text-lg font-bold text-slate-800">Instalar Aplicativo</h3>
-        <p className="text-sm text-slate-600 mt-1">Instale o Portal dos Sacerdotes para acesso rápido e offline!</p>
+        <p className="text-sm text-slate-600 mt-1">Instale o Ase Connect para acesso rápido e offline!</p>
       </div>
       <button 
         onClick={onInstall}
@@ -106,8 +106,21 @@ export default function App() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Service Worker Registration & Update Logic
+    let refreshing = false;
+    const handleControllerChange = () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    };
+
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
       navigator.serviceWorker.register('/sw.js').then(registration => {
+        if (registration.waiting) {
+          setWaitingWorker(registration.waiting);
+          setUpdateAvailable(true);
+        }
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
@@ -126,15 +139,19 @@ export default function App() {
       unsubscribeAuth();
       if (unsubscribeBlock) unsubscribeBlock();
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      }
     };
   }, []);
 
   const handleUpdate = () => {
+    setUpdateAvailable(false);
     if (waitingWorker) {
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      window.location.reload();
     }
-    setUpdateAvailable(false);
-    window.location.reload();
   };
 
   const handleInstall = async () => {
@@ -159,42 +176,52 @@ export default function App() {
                 {updateAvailable && <UpdateToast onUpdate={handleUpdate} />}
                 {deferredPrompt && <InstallPrompt deferredPrompt={deferredPrompt} onInstall={handleInstall} />}
                 <Routes>
-                <Route path="/cadastro" element={user ? <Navigate to="/boas-vindas" /> : <CadastroCasa />} />
-                <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-                <Route path="/recuperar-senha" element={<RecuperarSenha />} />
-                <Route path="/suspenso" element={user ? <ContaSuspensa /> : <Navigate to="/login" />} />
-                <Route path="/admin/debug-tenant" element={<AdminDebug />} />
-                <Route path="/boas-vindas" element={user ? <BoasVindas /> : <Navigate to="/login" />} />
-                <Route path="/" element={user ? <Layout /> : <ErrorDebug componentName="LandingPage"><LandingPage /></ErrorDebug>}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="membros" element={
-                    <ProtectedRoute nivelMinimo={Role.TESTADOR}>
-                      <Membros />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="financeiro" element={
-                    <ProtectedRoute nivelMinimo={Role.TESTADOR}>
-                      <Financeiro />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="eventos" element={
-                    <ProtectedRoute nivelMinimo={Role.TESTADOR}>
-                      <Eventos />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="relatorios" element={
-                    <ProtectedRoute nivelMinimo={Role.ADMIN_CASA}>
-                      <Relatorios />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="admin" element={
+                  <Route path="/cadastro" element={user ? <Navigate to="/boas-vindas" /> : <CadastroCasa />} />
+                  <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+                  <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+                  <Route path="/suspenso" element={user ? <ContaSuspensa /> : <Navigate to="/login" />} />
+                  <Route path="/admin/debug-tenant" element={
                     <ProtectedRoute nivelMinimo={Role.MASTER}>
-                      <Admin />
+                      <AdminDebug />
                     </ProtectedRoute>
                   } />
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  <Route path="/boas-vindas" element={user ? <BoasVindas /> : <Navigate to="/login" />} />
+
+                  {user ? (
+                    <Route path="/" element={<Layout />}>
+                      <Route index element={<Dashboard />} />
+                      <Route path="membros" element={
+                        <ProtectedRoute nivelMinimo={Role.TESTADOR}>
+                          <Membros />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="financeiro" element={
+                        <ProtectedRoute nivelMinimo={Role.TESTADOR}>
+                          <Financeiro />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="eventos" element={
+                        <ProtectedRoute nivelMinimo={Role.TESTADOR}>
+                          <Eventos />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="relatorios" element={
+                        <ProtectedRoute nivelMinimo={Role.ADMIN_CASA}>
+                          <Relatorios />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="admin" element={
+                        <ProtectedRoute nivelMinimo={Role.MASTER}>
+                          <Admin />
+                        </ProtectedRoute>
+                      } />
+                    </Route>
+                  ) : (
+                    <Route path="/" element={<ErrorDebug componentName="LandingPage"><LandingPage /></ErrorDebug>} />
+                  )}
+
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
             </Router>
           </DataProvider>
         </UserProvider>
