@@ -131,8 +131,8 @@ async function startServer() {
         ],
         mode: 'subscription',
         client_reference_id: userId || 'anonymous',
-        success_url: `${req.protocol}://${req.get('host')}/planos?success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/planos?canceled=true`,
+        success_url: `${req.headers.origin || `${req.protocol}://${req.get('host')}`}/#/planos?success=true`,
+        cancel_url: `${req.headers.origin || `${req.protocol}://${req.get('host')}`}/#/planos?canceled=true`,
       });
 
       if (session.url) {
