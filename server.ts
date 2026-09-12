@@ -1,14 +1,10 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import cors from 'cors';
 import admin from 'firebase-admin';
 import Stripe from 'stripe';
 import ocrRouter from './api/gemini/ocr';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -168,7 +164,7 @@ async function startServer() {
 
   // Vite middleware for development
   const isProd = process.env.NODE_ENV === 'production';
-  const distPath = __dirname.endsWith("dist") ? __dirname : path.join(__dirname, "dist");
+  const distPath = path.join(process.cwd(), 'dist');
   
   if (!isProd) {
     try {

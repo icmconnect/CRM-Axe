@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, DollarSign, LogOut, Download, Calendar, FileText, Shield, Bell, Moon, Sun, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, DollarSign, LogOut, Download, Calendar, FileText, Shield, Bell, Moon, Sun, Menu, X, ExternalLink } from 'lucide-react';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -265,8 +265,8 @@ export default function Layout() {
         {/* Desktop Sidebar */}
         <aside className="hidden md:flex w-64 shrink-0 flex-col h-full bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-sm z-30 transition-colors duration-200">
           {/* Logo Container */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0">
-            <Logo variant="horizontal" className="h-16 sm:h-20 w-auto max-w-full object-contain mx-auto" />
+          <div className="py-4 px-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0">
+            <Logo variant="sidebar" src="/assets/images/logo-menu.png" className="w-32 sm:w-36 h-auto object-contain mx-auto" />
           </div>
 
           {/* Navigation Menu */}
@@ -314,8 +314,8 @@ export default function Layout() {
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <aside className="relative w-64 max-w-[80vw] bg-white dark:bg-slate-800 h-full flex flex-col shadow-2xl z-10 border-r border-slate-200 dark:border-slate-700">
-              <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
-                <Logo variant="horizontal" className="h-10 sm:h-12 w-auto max-w-[150px] object-contain" />
+              <div className="py-3 px-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
+                <Logo variant="sidebar" src="/assets/images/logo-menu.png" className="w-32 sm:w-36 h-auto object-contain" />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg transition-colors"
@@ -377,10 +377,21 @@ export default function Layout() {
             <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate mx-2 text-center md:text-left flex-1">
               {nomeCasa || '...'}
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+               <a
+                 href="https://sacerdote.aseconnect.com.br/"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#C59B4B]/10 hover:bg-[#C59B4B]/20 dark:bg-[#C59B4B]/15 dark:hover:bg-[#C59B4B]/25 text-[#C59B4B] dark:text-[#E5B869] border border-[#C59B4B]/30 hover:border-[#C59B4B]/50 rounded-lg text-xs font-semibold transition-all duration-200 shadow-xs group shrink-0"
+                 title="Conheça o Sacerdote"
+               >
+                 <span className="hidden sm:inline whitespace-nowrap">Conheça o Sacerdote</span>
+                 <ExternalLink size={13} className="opacity-80 group-hover:opacity-100 transition-opacity shrink-0" />
+               </a>
+
                <button 
                  onClick={toggleTheme}
-                 className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                 className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors shrink-0"
                  title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
                >
                  {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
@@ -398,7 +409,7 @@ export default function Layout() {
           
           {/* Footer */}
           <footer className="mt-auto w-full max-w-7xl mx-auto p-6 flex flex-col items-center justify-center opacity-80 hover:opacity-100 transition-opacity">
-            <Logo variant="horizontal" className="h-12 sm:h-16 w-auto mb-2 object-contain" />
+            <Logo variant="vertical" src="/assets/images/logo-rodape.png" className="h-14 sm:h-16 w-auto mb-2 object-contain mx-auto" />
             <p className="text-[10px] text-slate-400 font-medium">Gestão Profissional para Casas de Axé</p>
           </footer>
         </main>

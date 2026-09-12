@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import PlanosCards from '../components/PlanosCards';
 import { Logo } from '../components/Logo';
 import { 
-  Shield, Sparkles, Phone, MessageSquare, Menu, X, Check, Globe, HelpCircle, 
+  Shield, Phone, MessageSquare, MessageCircle, Menu, X, Check, Globe, HelpCircle, 
   ChevronDown, ChevronUp, BarChart3, Users, Calendar, Brain, Smartphone, Landmark,
   ArrowRight
 } from 'lucide-react';
@@ -58,30 +58,30 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#FFFDF7] text-slate-800 font-sans selection:bg-[#FDE68A] scroll-smooth">
       {/* HEADER / NAVIGATION BAR */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo variant="horizontal" className="h-24 sm:h-28 w-auto object-contain" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 shrink-0">
+            <Logo variant="horizontal" className="h-9 sm:h-10 w-auto object-contain" />
           </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-slate-500 uppercase">
-            <a href="#funcionalidades" className="hover:text-[#D97706] transition-colors">Funcionalidades</a>
-            <a href="#como-funciona" className="hover:text-[#D97706] transition-colors">Como Funciona</a>
-            <a href="#planos" className="hover:text-[#D97706] transition-colors">Planos</a>
-            <a href="#depoimentos" className="hover:text-[#D97706] transition-colors">Depoimentos</a>
-            <a href="#faq" className="hover:text-[#D97706] transition-colors">Perguntas</a>
+          <nav className="hidden md:flex items-center gap-5 lg:gap-8 text-xs font-bold tracking-wider text-slate-500 uppercase">
+            <a href="#funcionalidades" className="hover:text-[#D97706] transition-colors whitespace-nowrap">Funcionalidades</a>
+            <a href="#como-funciona" className="hover:text-[#D97706] transition-colors whitespace-nowrap">Como Funciona</a>
+            <a href="#planos" className="hover:text-[#D97706] transition-colors whitespace-nowrap">Planos</a>
+            <a href="#depoimentos" className="hover:text-[#D97706] transition-colors whitespace-nowrap">Depoimentos</a>
+            <a href="#faq" className="hover:text-[#D97706] transition-colors whitespace-nowrap">Perguntas</a>
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3 lg:gap-4 shrink-0">
             <Link 
               to="/login" 
-              className="text-xs font-bold tracking-wider uppercase text-slate-600 hover:text-[#D97706] transition-colors"
+              className="text-xs font-bold tracking-wider uppercase text-slate-600 hover:text-[#D97706] transition-colors whitespace-nowrap"
             >
               Já tenho acesso
             </Link>
             <button
               onClick={() => navigate('/cadastro')}
-              className="bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs tracking-wider uppercase py-3 px-6 rounded-2xl transition-all shadow-md"
+              className="bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-xs tracking-wider uppercase py-2.5 px-5 rounded-xl transition-all shadow-sm whitespace-nowrap"
             >
               Experimentar Grátis
             </button>
@@ -162,9 +162,8 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]/40 mb-6 shadow-sm">
-            <Sparkles size={12} />
-            Plataforma 100% Brasileira e Profissional
+          <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]/40 mb-6 shadow-sm">
+            Desenvolvido para Casas de Axé
           </span>
 
           <h2 className="text-4xl sm:text-6xl font-serif font-black text-slate-900 tracking-tight max-w-4xl mx-auto leading-tight">
@@ -185,7 +184,7 @@ export default function LandingPage() {
             </button>
             
             <a
-              href="https://wa.me/5521999999999" 
+              href="https://wa.me/5514981570008?text=Ol%C3%A1%21%20Gostaria%20de%20tirar%20uma%20d%C3%BAvida%20sobre%20o%20Portal%20Ase%20Connect." 
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 hover:text-emerald-600 font-bold px-8 py-5 rounded-2xl transition-all duration-200 text-xs tracking-widest uppercase flex items-center justify-center gap-2 shadow-sm"
@@ -509,7 +508,7 @@ export default function LandingPage() {
       <footer className="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
-            <Logo variant="inverted" className="h-24 sm:h-28 md:h-32 w-auto object-contain drop-shadow" />
+            <Logo variant="horizontal" src="/assets/images/logo-rodape.png" className="w-64 sm:w-80 h-auto object-contain drop-shadow" />
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-slate-400 font-bold">
@@ -525,6 +524,18 @@ export default function LandingPage() {
           <p>© 2026 Ase Connect. Desenvolvido para a preservação estruturada de nossas comunidades tradicionais de matriz africana. Axé!</p>
         </div>
       </footer>
+
+      {/* Botão Flutuante do WhatsApp */}
+      <a
+        href="https://wa.me/5514981570008"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Fale conosco no WhatsApp"
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-[#128C7E] to-[#25D366] text-white rounded-full shadow-lg shadow-emerald-900/30 hover:shadow-2xl hover:shadow-emerald-500/40 hover:scale-110 active:scale-95 transition-all duration-300 group"
+        title="Fale conosco no WhatsApp"
+      >
+        <MessageCircle size={30} className="transition-transform duration-300 group-hover:scale-105" />
+      </a>
     </div>
   );
 }

@@ -174,7 +174,7 @@ export default function PlanosCards({ onSelectPlano }: PlanosCardsProps) {
 
       <div className="mt-16 text-center w-full">
         <a 
-          href="https://wa.me/5514981570009?text=Ase%2C%20Quero%20informa%C3%A7%C3%B5es%20sobre%20o%20Plano%20ANUAL" 
+          href="https://wa.me/5514981570008?text=Ase%2C%20Quero%20informa%C3%A7%C3%B5es%20sobre%20o%20Plano%20ANUAL" 
           target="_blank" 
           rel="noopener noreferrer"
           className="inline-flex flex-col items-center justify-center p-6 bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105"
